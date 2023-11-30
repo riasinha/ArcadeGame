@@ -1,179 +1,92 @@
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-#include <GLUT/glut.h>
-
+#include "dependencies/include/GLFW/glfw3.h"
 #include <iostream>
+#include <vector>
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
+// Define the maze grid size based on your image (this should match your maze's dimensions)
+const int MAZE_WIDTH = 10;
+const int MAZE_HEIGHT = 10;
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+// This is a placeholder for where you would load your image and process it to a maze
+// The actual implementation of image loading and processing is not provided
+std::vector<std::vector<int> > maze(MAZE_HEIGHT, std::vector<int>(MAZE_WIDTH));
 
-const char* vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
+void initializeMaze() {
+    int rawMaze[MAZE_HEIGHT][MAZE_WIDTH] = {
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+        {1, 0, 0, 0, 1, 0, 1, 0, 0, 1},
+        {1, 0, 1, 0, 1, 0, 1, 0, 1, 1},
+        {1, 0, 1, 0, 0, 0, 1, 0, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 0, 1},
+        {1, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+        {1, 1, 1, 1, 1, 1, 0, 1, 0, 1},
+        {1, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+        {1, 1, 1, 1, 0, 1, 1, 1, 0, 1},
+        {1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+    };
 
-const char* fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(0.53f, 0.81f, 0.98f, 1.0f);\n"
-    "}\n\0";
+    for (int y = 0; y < MAZE_HEIGHT; ++y) {
+        for (int x = 0; x < MAZE_WIDTH; ++x) {
+            maze[y][x] = rawMaze[y][x];
+        }
+    }
+}
 
-float vertices[] = {
-    -0.1f, -0.1f, 0.0f, // bottom-left
-     0.1f, -0.1f, 0.0f, // bottom-right
-     0.1f,  0.1f, 0.0f, // top-right
-    -0.1f,  0.1f, 0.0f, // top-left
-};
+void drawMaze() {
+    for (int y = 0; y < MAZE_HEIGHT; ++y) {
+        for (int x = 0; x < MAZE_WIDTH; ++x) {
+            if (maze[y][x] == 1) {
+                // Draw a wall
+                glColor3f(0.0f, 0.0f, 0.0f); // Black color for walls
+            } else {
+                // Draw a path
+                glColor3f(1.0f, 1.0f, 1.0f); // White color for paths
+            }
 
-float movementSpeed = 0.05f; // Adjust the movement speed as needed
+            // Draw a quad at the (x, y) position
+            glBegin(GL_QUADS);
+                glVertex2i(x, y);
+                glVertex2i(x + 1, y);
+                glVertex2i(x + 1, y + 1);
+                glVertex2i(x, y + 1);
+            glEnd();
+        }
+    }
+}
 
-unsigned int VBO, VAO; // Declare VBO and VAO as global variables
+int main() {
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
+        return -1;
+    }
 
-int main()
-{
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
+    GLFWwindow* window = glfwCreateWindow(640, 480, "Simple Maze Renderer", NULL, NULL);
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return -1;
     }
+
     glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    initializeMaze();
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
+    // Set up an orthogonal projection matrix
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity(); // Reset the projection to the identity matrix
+    glOrtho(0.0, double(MAZE_WIDTH), double(MAZE_HEIGHT), 0.0, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-
-    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-
-    unsigned int shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-    }
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    while (!glfwWindowShouldClose(window))
-    {
-        processInput(window);
-
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        drawMaze();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
-
+    glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
 
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    float xMovement = 0.0f;
-    float yMovement = 0.0f;
-
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-    {
-        xMovement -= movementSpeed;
-    }
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-    {
-        xMovement += movementSpeed;
-    }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-    {
-        yMovement += movementSpeed;
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-    {
-        yMovement -= movementSpeed;
-    }
-
-    for (int i = 0; i < 12; i += 3)
-    {
-        vertices[i] += xMovement;
-        vertices[i + 1] += yMovement;
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
