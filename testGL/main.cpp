@@ -10,7 +10,7 @@ std::vector<std::vector<int>> maze;
 
 // Window configuration
 const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_HEIGHT = 800;
 
 // Character configuration
 float characterSize = 0.1f; // The size of the character
@@ -18,16 +18,40 @@ float characterX = 1.5f; // The initial X position of the character
 float characterY = 1.5f; // The initial Y position of the character
 float movementSpeed = 0.05f; // Adjust the movement speed as needed
 
-// Ghost configuration
 struct Ghost {
     float x, y; // Position
+    float dx, dy; // Direction
     float radius; // Radius of the ghost circle
     float r, g, b; // Color
+    float speed = 0.5f; // Speed of the ghost
+    // Initialize dx, dy with random direction
+    Ghost(float x, float y, float radius, float r, float g, float b) 
+        : x(x), y(y), radius(radius), r(r), g(g), b(b), dx(0), dy(0) {}
 } ghosts[] = {
-    {3.5f, 3.5f, 0.2f, 1.0f, 0.0f, 0.0f}, // Red ghost
-    {5.5f, 5.5f, 0.2f, 1.0f, 0.0f, 1.0f}, // Purple ghost
-    {7.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f}  // Turquoise ghost
+    Ghost(3.5f, 3.5f, 0.2f, 1.0f, 0.0f, 0.0f), // Red ghost
+    Ghost(5.5f, 5.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
+    Ghost(7.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f)  // Turquoise ghost
 };
+
+
+bool isPositionValid(float x, float y) {
+    // Check for window boundaries
+    if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT) {
+        return false;
+    }
+
+    // Check for wall collisions (assuming 1 represents a wall in your maze array)
+    int ix = static_cast<int>(x);
+    int iy = static_cast<int>(y);
+
+    // Check for wall and boundary collisions
+    // Assuming 1 represents a wall and 2 represents the boundary in your maze array
+    if (maze[iy][ix] == 1 || maze[iy][ix] == 2) {
+        return false;
+    }
+
+    return true;
+}
 
 void initializeMaze() {
     maze = {
@@ -53,14 +77,37 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
-        characterX -= movementSpeed;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
-        characterX += movementSpeed;
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        characterY += movementSpeed;
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        characterY -= movementSpeed;
+
+    float newX, newY;
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        newX = characterX - movementSpeed;
+        newY = characterY;
+        if (isPositionValid(newX, newY)) {
+            characterX = newX;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+        newX = characterX + movementSpeed;
+        newY = characterY;
+        if (isPositionValid(newX, newY)) {
+            characterX = newX;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+        newX = characterX;
+        newY = characterY + movementSpeed;
+        if (isPositionValid(newX, newY)) {
+            characterY = newY;
+        }
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+        newX = characterX;
+        newY = characterY - movementSpeed;
+        if (isPositionValid(newX, newY)) {
+            characterY = newY;
+        }
+    }
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -79,6 +126,20 @@ void drawCharacter() {
 }
 
 void drawGhost(Ghost ghost) {
+
+    // Calculate direction vector towards the player
+    float dx = characterX - ghost.x;
+    float dy = characterY - ghost.y;
+    float distance = sqrt(dx * dx + dy * dy);
+    
+    // Normalize the direction
+    dx /= distance;
+    dy /= distance;
+    
+    // Move the ghost towards the player
+    ghost.x += dx * ghost.speed;
+    ghost.y += dy * ghost.speed;
+
     const int numSegments = 16; // Number of segments used to draw the circle
 
     glColor3f(ghost.r, ghost.g, ghost.b); // Ghost color
@@ -92,7 +153,6 @@ void drawGhost(Ghost ghost) {
         }
     glEnd();
 }
-
 
 void drawMaze() {
     for (int y = 0; y < MAZE_HEIGHT; ++y) {
@@ -119,8 +179,39 @@ void drawMaze() {
     }
 }
 
+void updateGhostPositions(double deltaTime) {
+    static float changeDirectionTimer = 0;
+    static float directionChangeInterval = 2.0f; // Change direction every 2 seconds
+
+    changeDirectionTimer += static_cast<float>(deltaTime);
+
+    // Change direction periodically
+    if (changeDirectionTimer >= directionChangeInterval) {
+        for (Ghost& ghost : ghosts) {
+            // Randomly assign new directions
+            ghost.dx = (rand() % 3 - 1) * ghost.speed; // -1, 0, or 1
+            ghost.dy = (rand() % 3 - 1) * ghost.speed;
+        }
+        changeDirectionTimer = 0; // Reset the timer
+    }
+
+    // Update ghost positions smoothly
+    for (Ghost& ghost : ghosts) {
+        float newX = ghost.x + ghost.dx * static_cast<float>(deltaTime);
+        float newY = ghost.y + ghost.dy * static_cast<float>(deltaTime);
+
+        // Check if the new position is valid before updating
+        if (isPositionValid(newX, newY)) {
+            ghost.x = newX;
+            ghost.y = newY;
+        }
+    }
+}
+
 
 int main() {
+    srand(time(NULL)); // Seed the random number generator
+
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return -1;
@@ -143,8 +234,15 @@ int main() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+    double lastTime = glfwGetTime();
+
     while (!glfwWindowShouldClose(window)) {
+        double currentTime = glfwGetTime();
+        double deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
         processInput(window);
+        updateGhostPositions(deltaTime); // Update positions with delta time
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
