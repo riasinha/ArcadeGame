@@ -13,7 +13,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 800;
 
 // Character configuration
-float characterSize = 0.1f; // The size of the character
+float characterSize = 0.2f; // The size of the character
 float characterX = 1.5f; // The initial X position of the character
 float characterY = 1.5f; // The initial Y position of the character
 float movementSpeed = 0.05f; // Adjust the movement speed as needed
@@ -32,6 +32,9 @@ struct Ghost {
     Ghost(5.5f, 5.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
     Ghost(7.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f)  // Turquoise ghost
 };
+
+bool isDead = false;
+
 
 
 bool isPositionValid(float x, float y) {
@@ -78,9 +81,10 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
 
 
-    float newX, newY;
+    if (!isDead) {  // Only allow movement when not dead
+        float newX, newY;
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
         newX = characterX - movementSpeed;
         newY = characterY;
         if (isPositionValid(newX, newY)) {
@@ -108,6 +112,8 @@ void processInput(GLFWwindow* window) {
             characterY = newY;
         }
     }
+    }
+
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -244,6 +250,21 @@ int main() {
         processInput(window);
         updateGhostPositions(deltaTime); // Update positions with delta time
 
+        // Check for collision with ghosts
+        if (!isDead) {
+            for (Ghost& ghost : ghosts) {
+                float dx = characterX - ghost.x;
+                float dy = characterY - ghost.y;
+                float distance = sqrt(dx * dx + dy * dy);
+
+                if (distance < (characterSize + ghost.radius)) {
+                    isDead = true;
+                    std::cout << "You died! Press 'R' to restart." << std::endl;
+                    break; // Exit the loop when one ghost collision is detected
+                }
+            }
+        }
+
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -253,10 +274,17 @@ int main() {
             drawGhost(ghost);
         }
 
+        if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+            isDead = false;
+            characterX = 1.5f;
+            characterY = 1.5f;
+        }
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
+    
     glfwTerminate();
     return 0;
 }
+
