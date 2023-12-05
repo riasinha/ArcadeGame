@@ -1,12 +1,11 @@
-#include <GLFW/glfw3.h>
+#include <GLUT/glut.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
-
 // Maze configuration
 const int MAZE_WIDTH = 15;
 const int MAZE_HEIGHT = 15;
-std::vector<std::vector<int>> maze;
+std::vector<std::vector<int> > maze;
 
 // Window configuration
 const unsigned int SCR_WIDTH = 800;
@@ -34,6 +33,7 @@ struct Ghost {
 };
 
 
+
 bool isPositionValid(float x, float y) {
     // Check for window boundaries
     if (x < 0 || x >= MAZE_WIDTH || y < 0 || y >= MAZE_HEIGHT) {
@@ -53,8 +53,57 @@ bool isPositionValid(float x, float y) {
     return true;
 }
 
+
+
+
+void keyboard(unsigned char key, int x, int y) {
+    float newX, newY;
+    switch (key) {
+        case 27: // ESC key
+            exit(0);
+            break;
+        case 'a': // Left
+        case 'A':
+            newX = characterX - movementSpeed;
+            newY = characterY;
+            if (isPositionValid(newX, newY)) {
+                characterX = newX;
+            }
+            break;
+        case 'd': // Right
+        case 'D':
+            newX = characterX + movementSpeed;
+            newY = characterY;
+            if (isPositionValid(newX, newY)) {
+                characterX = newX;
+            }
+            break;
+        case 'w': // Up
+        case 'W':
+            newX = characterX;
+            newY = characterY + movementSpeed;
+            if (isPositionValid(newX, newY)) {
+                characterY = newY;
+            }
+            break;
+        case 's': // Down
+        case 'S':
+            newX = characterX;
+            newY = characterY - movementSpeed;
+            if (isPositionValid(newX, newY)) {
+                characterY = newY;
+            }
+            break;
+    }
+}
+
+
+
 void initializeMaze() {
-    maze = {
+
+    maze.resize(MAZE_HEIGHT);
+
+    int rawMaze[MAZE_HEIGHT][MAZE_WIDTH] = {
         {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
         {2, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
         {2, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 2},
@@ -71,47 +120,12 @@ void initializeMaze() {
         {2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2},
         {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
     };
-}
-
-void processInput(GLFWwindow* window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-
-    float newX, newY;
-
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-        newX = characterX - movementSpeed;
-        newY = characterY;
-        if (isPositionValid(newX, newY)) {
-            characterX = newX;
+    for (int y = 0; y < MAZE_HEIGHT; ++y) {
+        maze[y].resize(MAZE_WIDTH);
+        for (int x = 0; x < MAZE_WIDTH; ++x) {
+            maze[y][x] = rawMaze[y][x];
         }
     }
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-        newX = characterX + movementSpeed;
-        newY = characterY;
-        if (isPositionValid(newX, newY)) {
-            characterX = newX;
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-        newX = characterX;
-        newY = characterY + movementSpeed;
-        if (isPositionValid(newX, newY)) {
-            characterY = newY;
-        }
-    }
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-        newX = characterX;
-        newY = characterY - movementSpeed;
-        if (isPositionValid(newX, newY)) {
-            characterY = newY;
-        }
-    }
-}
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
 }
 
 void drawCharacter() {
@@ -207,56 +221,44 @@ void updateGhostPositions(double deltaTime) {
         }
     }
 }
+void update(int value) {
+    // Update logic here
+    double deltaTime = value / 1000.0;
+    updateGhostPositions(deltaTime);
 
+    glutPostRedisplay(); // Redraw the window
+    glutTimerFunc(16, update, 16); // Schedule next update in 16ms
+}
 
-int main() {
-    srand(time(NULL)); // Seed the random number generator
+void display() {
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW" << std::endl;
-        return -1;
+    drawMaze();
+    drawCharacter();
+    for (Ghost &ghost : ghosts) {
+        drawGhost(ghost);
     }
 
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Maze Game", NULL, NULL);
-    if (!window) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glutSwapBuffers();
+}
 
-    initializeMaze(); // Populate the maze data
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(SCR_WIDTH, SCR_HEIGHT);
+    glutCreateWindow("Maze Game");
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0.0, MAZE_WIDTH, 0.0, MAZE_HEIGHT, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 
-    double lastTime = glfwGetTime();
+    initializeMaze();
 
-    while (!glfwWindowShouldClose(window)) {
-        double currentTime = glfwGetTime();
-        double deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+    glutDisplayFunc(display);
+    glutKeyboardFunc(keyboard);
+    glutTimerFunc(0, update, 0);
 
-        processInput(window);
-        updateGhostPositions(deltaTime); // Update positions with delta time
-
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        drawMaze();
-        drawCharacter();
-        for (Ghost &ghost : ghosts) {
-            drawGhost(ghost);
-        }
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
-
-    glfwTerminate();
+    glutMainLoop();
     return 0;
 }
