@@ -33,6 +33,8 @@ struct Ghost {
 };
 
 
+bool isDead = false;
+
 
 bool isPositionValid(float x, float y) {
     // Check for window boundaries
@@ -53,51 +55,58 @@ bool isPositionValid(float x, float y) {
     return true;
 }
 
-
-
-
 void keyboard(unsigned char key, int x, int y) {
     float newX, newY;
-    switch (key) {
-        case 27: // ESC key
-            exit(0);
-            break;
-        case 'a': // Left
-        case 'A':
-            newX = characterX - movementSpeed;
-            newY = characterY;
-            if (isPositionValid(newX, newY)) {
-                characterX = newX;
-            }
-            break;
-        case 'd': // Right
-        case 'D':
-            newX = characterX + movementSpeed;
-            newY = characterY;
-            if (isPositionValid(newX, newY)) {
-                characterX = newX;
-            }
-            break;
-        case 'w': // Up
-        case 'W':
-            newX = characterX;
-            newY = characterY + movementSpeed;
-            if (isPositionValid(newX, newY)) {
-                characterY = newY;
-            }
-            break;
-        case 's': // Down
-        case 'S':
-            newX = characterX;
-            newY = characterY - movementSpeed;
-            if (isPositionValid(newX, newY)) {
-                characterY = newY;
-            }
-            break;
+
+    if (isDead && (key == 'r' || key == 'R')) {
+        // Reset game state
+        isDead = false;
+        characterX = 1.5f; // Reset to start position
+        characterY = 1.5f;
+        // You can also reset the ghosts' positions and other game states if needed
+        return;
+    }
+
+    if (!isDead) {  
+        switch (key) {
+            case 27: // ESC key
+                exit(0);
+                break;
+            case 'a': // Left
+            case 'A':
+                newX = characterX - movementSpeed;
+                newY = characterY;
+                if (isPositionValid(newX, newY)) {
+                    characterX = newX;
+                }
+                break;
+            case 'd': // Right
+            case 'D':
+                newX = characterX + movementSpeed;
+                newY = characterY;
+                if (isPositionValid(newX, newY)) {
+                    characterX = newX;
+                }
+                break;
+            case 'w': // Up
+            case 'W':
+                newX = characterX;
+                newY = characterY + movementSpeed;
+                if (isPositionValid(newX, newY)) {
+                    characterY = newY;
+                }
+                break;
+            case 's': // Down
+            case 'S':
+                newX = characterX;
+                newY = characterY - movementSpeed;
+                if (isPositionValid(newX, newY)) {
+                    characterY = newY;
+                }
+                break;
+        }
     }
 }
-
-
 
 void initializeMaze() {
 
@@ -194,6 +203,9 @@ void drawMaze() {
 }
 
 void updateGhostPositions(double deltaTime) {
+    if (isDead) {
+        return; // Don't update ghost positions if the player is dead
+    }
     static float changeDirectionTimer = 0;
     static float directionChangeInterval = 2.0f; // Change direction every 2 seconds
 
@@ -221,6 +233,7 @@ void updateGhostPositions(double deltaTime) {
         }
     }
 }
+
 void update(int value) {
     // Update logic here
     double deltaTime = value / 1000.0;
@@ -230,8 +243,23 @@ void update(int value) {
     glutTimerFunc(16, update, 16); // Schedule next update in 16ms
 }
 
+bool checkCollisionWithGhosts() {
+    for (const Ghost& ghost : ghosts) {
+        float distance = sqrt((characterX - ghost.x) * (characterX - ghost.x) +
+                              (characterY - ghost.y) * (characterY - ghost.y));
+        if (distance < characterSize + ghost.radius) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
+
+    if (!isDead) {
+        isDead = checkCollisionWithGhosts();
+    }
 
     drawMaze();
     drawCharacter();
@@ -239,8 +267,23 @@ void display() {
         drawGhost(ghost);
     }
 
+    if (isDead) {
+        // Display "You Died" message
+        glColor3f(1.0, 0.0, 0.0); // Red color
+        glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
+        int textX = SCR_WIDTH / 2 - 50; // Adjust the position based on your window size
+        int textY = SCR_HEIGHT / 2;
+        glColor3f(1.0, 0.0, 0.0); // Red color for the text
+        glRasterPos2i(textX, textY);
+        std::string message = "You Died";
+        for (char c : message) {
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+    }
+
     glutSwapBuffers();
 }
+
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
