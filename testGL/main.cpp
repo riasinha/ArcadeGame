@@ -1,7 +1,11 @@
 #include <GLUT/glut.h>
+//#include < GLUT/freeglut.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
+
+using namespace std;
+
 // Maze configuration
 const int MAZE_WIDTH = 15;
 const int MAZE_HEIGHT = 15;
@@ -15,7 +19,7 @@ const unsigned int SCR_HEIGHT = 800;
 float characterSize = 0.1f; // The size of the character
 float characterX = 1.5f; // The initial X position of the character
 float characterY = 1.5f; // The initial Y position of the character
-float movementSpeed = 0.05f; // Adjust the movement speed as needed
+float movementSpeed = 0.15f; // Adjust the movement speed as needed
 
 struct Ghost {
     float x, y; // Position
@@ -34,6 +38,7 @@ struct Ghost {
 
 
 bool isDead = false;
+bool levelComplete = false;
 
 
 bool isPositionValid(float x, float y) {
@@ -52,22 +57,28 @@ bool isPositionValid(float x, float y) {
         return false;
     }
 
+    if (maze[iy][ix] == 4) {
+        levelComplete = true;
+        std::cout << "level complete" << std::endl;
+    }
+
     return true;
 }
 
 void keyboard(unsigned char key, int x, int y) {
     float newX, newY;
 
-    if (isDead && (key == 'r' || key == 'R')) {
+    if ((isDead || levelComplete) && (key == 'r' || key == 'R')) {
         // Reset game state
         isDead = false;
+        levelComplete = false;
         characterX = 1.5f; // Reset to start position
         characterY = 1.5f;
         // You can also reset the ghosts' positions and other game states if needed
         return;
     }
 
-    if (!isDead) {  
+    if (!isDead && !levelComplete) {  
         switch (key) {
             case 27: // ESC key
                 exit(0);
@@ -104,6 +115,11 @@ void keyboard(unsigned char key, int x, int y) {
                     characterY = newY;
                 }
                 break;
+
+            if (maze[static_cast<int>(characterY)][static_cast<int>(characterX)] == 4) {
+                levelComplete = true;
+                std::cout << "You Won!" << std::endl; // Print to console
+            }
         }
     }
 }
@@ -271,11 +287,20 @@ void display() {
         // Display "You Died" message
         glColor3f(1.0, 0.0, 0.0); // Red color
         glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
-        int textX = SCR_WIDTH / 2 - 50; // Adjust the position based on your window size
-        int textY = SCR_HEIGHT / 2;
         glColor3f(1.0, 0.0, 0.0); // Red color for the text
-        glRasterPos2i(textX, textY);
+        glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
         std::string message = "You Died";
+        for (char c : message) {
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+    }
+
+    if (levelComplete) {
+        // Display "You Won" message
+        glColor3f(0.0, 1.0, 0.0); // Green color
+        glColor3f(0.0, 1.0, 0.0); // Green color for the text
+        glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
+        std::string message = "You Won!";
         for (char c : message) {
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
