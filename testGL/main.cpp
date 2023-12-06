@@ -7,8 +7,8 @@
 using namespace std;
 
 // Maze configuration
-const int MAZE_WIDTH = 15;
-const int MAZE_HEIGHT = 15;
+const int MAZE_WIDTH = 20;
+const int MAZE_HEIGHT = 20;
 std::vector<std::vector<int> > maze;
 
 // Window configuration
@@ -16,7 +16,7 @@ const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 800;
 
 // Character configuration
-float characterSize = 0.1f; // The size of the character
+float characterSize = 0.5f; // The size of the character
 float characterX = 1.5f; // The initial X position of the character
 float characterY = 1.5f; // The initial Y position of the character
 float movementSpeed = 0.15f; // Adjust the movement speed as needed
@@ -37,9 +37,141 @@ struct Ghost {
 };
 
 
+int lives = 3;
+bool isWon;
 bool isDead = false;
 bool levelComplete = false;
 
+int currentLevel = 1;
+const int MAX_LEVELS = 5; // Define how many levels you have
+
+
+
+
+void drawHeart(float x, float y, float size) {
+    glColor3f(1.0f, 0.0f, 0.0f); // Red color for the heart
+
+    // Upper left triangle
+    glBegin(GL_TRIANGLES);
+        glVertex2f(x, y);
+        glVertex2f(x - size, y + size);
+        glVertex2f(x, y + 2 * size);
+    glEnd();
+
+    // Upper right triangle
+    glBegin(GL_TRIANGLES);
+        glVertex2f(x, y);
+        glVertex2f(x + size, y + size);
+        glVertex2f(x, y + 2 * size);
+    glEnd();
+
+    // Lower rectangle (square)
+    glBegin(GL_QUADS);
+        glVertex2f(x - size, y);
+        glVertex2f(x + size, y);
+        glVertex2f(x + size, y - size);
+        glVertex2f(x - size, y - size);
+    glEnd();
+}
+
+
+
+
+void initializeMazeForLevel(int level) {
+    maze.clear(); // Clear existing maze
+        const int mazeWidth = 20; // Example, adjust based on level
+        const int mazeHeight = 20; // Example, adjust based on level
+    if (level == 1) {
+
+        maze.resize(mazeHeight);
+
+        int rawMaze[20][20] = {
+            {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+            {2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2},
+            {2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 2},
+            {2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2},
+            {2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 4, 4, 2},
+            {2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 4, 4, 2},
+            {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
+        };
+        for (int y = 0; y < mazeHeight; ++y) {
+            maze[y].resize(mazeWidth);
+            for (int x = 0; x < mazeWidth; ++x) {
+                maze[y][x] = rawMaze[y][x];
+            }
+        }
+
+    } else if (level == 2) {
+
+        const int mazeWidth = 20; // Example, adjust based on level
+        const int mazeHeight = 20; // Example, adjust based on level
+        
+        maze.resize(mazeHeight);
+
+        int rawMaze[mazeHeight][mazeWidth] = {
+            {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+            {2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 2},
+            {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 2},
+            {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
+        };
+        for (int y = 0; y < mazeHeight; ++y) {
+            maze[y].resize(mazeWidth);
+            for (int x = 0; x < mazeWidth; ++x) {
+                maze[y][x] = rawMaze[y][x];
+            }
+        }
+
+    }
+}
+
+void startNextLevel() {
+    if (currentLevel < MAX_LEVELS) {
+        //currentLevel++;
+        initializeMazeForLevel(2);
+        levelComplete = false;
+        isDead = false;
+
+    } else {
+        glColor3f(0.0, 1.0, 0.0); // Red color
+        glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
+        glColor3f(1.0, 0.0, 0.0); // Red color for the text
+        glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
+
+        string message = "Congrats you won! Press G to restart the game.";
+        for (char c : message) {
+            glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+        }
+    }
+}
 
 bool isPositionValid(float x, float y) {
     // Check for window boundaries
@@ -69,11 +201,22 @@ void keyboard(unsigned char key, int x, int y) {
     float newX, newY;
 
     if ((isDead || levelComplete) && (key == 'r' || key == 'R')) {
-        // Reset game state
+        // Reset game states
         isDead = false;
         levelComplete = false;
         characterX = 1.5f; // Reset to start position
         characterY = 1.5f;
+        // You can also reset the ghosts' positions and other game states if needed
+        return;
+    }
+
+    if ((levelComplete) && (key == 'n' || key == 'N')) {
+        // Reset game states
+        isDead = false;
+        levelComplete = false;
+        characterX = 1.5f; // Reset to start position
+        characterY = 1.5f;
+        startNextLevel();
         // You can also reset the ghosts' positions and other game states if needed
         return;
     }
@@ -120,35 +263,6 @@ void keyboard(unsigned char key, int x, int y) {
                 levelComplete = true;
                 std::cout << "You Won!" << std::endl; // Print to console
             }
-        }
-    }
-}
-
-void initializeMaze() {
-
-    maze.resize(MAZE_HEIGHT);
-
-    int rawMaze[MAZE_HEIGHT][MAZE_WIDTH] = {
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-        {2, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
-        {2, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 2},
-        {2, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 2},
-        {2, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 2},
-        {2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 2},
-        {2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 2},
-        {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
-        {2, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2},
-        {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
-        {2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2},
-        {2, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2},
-        {2, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2},
-        {2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2},
-        {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
-    };
-    for (int y = 0; y < MAZE_HEIGHT; ++y) {
-        maze[y].resize(MAZE_WIDTH);
-        for (int x = 0; x < MAZE_WIDTH; ++x) {
-            maze[y][x] = rawMaze[y][x];
         }
     }
 }
@@ -275,6 +389,7 @@ void display() {
 
     if (!isDead) {
         isDead = checkCollisionWithGhosts();
+        if (isDead){lives--;}
     }
 
     drawMaze();
@@ -283,13 +398,29 @@ void display() {
         drawGhost(ghost);
     }
 
+
+    float heartSize = 0.5f; // Adjust the size as needed
+    float startX = MAZE_WIDTH - 3 * heartSize - 1; // Starting X position
+    float startY = MAZE_HEIGHT - heartSize - 1; // Starting Y position
+    for (int i = 0; i < lives; i++) {
+        drawHeart(startX + i * heartSize, startY, heartSize);
+    }
+
     if (isDead) {
         // Display "You Died" message
         glColor3f(1.0, 0.0, 0.0); // Red color
         glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
         glColor3f(1.0, 0.0, 0.0); // Red color for the text
         glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
-        std::string message = "You Died";
+
+        string message = "";
+        cout << "lives: " << lives << endl;
+        if (lives == 0) {
+            message = "You lost! Game over. Press R to play again.";
+        }
+        else {
+            message = "Oh no! You lost a life!";
+        }
         for (char c : message) {
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
@@ -300,7 +431,7 @@ void display() {
         glColor3f(0.0, 1.0, 0.0); // Green color
         glColor3f(0.0, 1.0, 0.0); // Green color for the text
         glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
-        std::string message = "You Won!";
+        std::string message = "Level complete! Press N to go to the next level!";
         for (char c : message) {
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
@@ -308,7 +439,6 @@ void display() {
 
     glutSwapBuffers();
 }
-
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
@@ -321,7 +451,7 @@ int main(int argc, char** argv) {
     glOrtho(0.0, MAZE_WIDTH, 0.0, MAZE_HEIGHT, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
 
-    initializeMaze();
+    initializeMazeForLevel(currentLevel);
 
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
