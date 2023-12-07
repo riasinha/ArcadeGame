@@ -31,9 +31,15 @@ struct Ghost {
     Ghost(float x, float y, float radius, float r, float g, float b) 
         : x(x), y(y), radius(radius), r(r), g(g), b(b), dx(0), dy(0) {}
 } ghosts[] = {
-    Ghost(3.5f, 3.5f, 0.2f, 1.0f, 0.0f, 0.0f), // Red ghost
-    Ghost(2.5f, 5.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
-    Ghost(7.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f)  // Turquoise ghost
+    Ghost(5.5f, 1.5f, 0.2f, 1.0f, 0.0f, 0.0f), // Red ghost
+    Ghost(12.5f, 15.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
+    Ghost(7.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f),  // Turquoise ghost
+    Ghost(18.5f, 9.5f, 0.2f, 1.0f, 0.0f, 0.0f), // Red ghost
+    Ghost(2.5f, 10.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
+    Ghost(7.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f),  // Turquoise ghost
+    Ghost(12.5f, 18.5f, 0.2f, 1.0f, 0.0f, 0.0f), // Red ghost
+    Ghost(2.5f, 15.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
+    Ghost(10.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f)  // Turquoise ghost
 };
 
 struct Diamond{
@@ -53,32 +59,32 @@ const int MAX_LEVELS = 5; // Define how many levels you have
 
 
 
+void drawStar(float centerX, float centerY, float size) {
+    glColor3f(1.0f, 1.0f, 0.0f); // Yellow color for the star
+    const int numVertices = 10; // Total vertices for a 5-point star
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(centerX, centerY); // Center of the star
 
-void drawHeart(float x, float y, float size) {
-    glColor3f(1.0f, 0.0f, 0.0f); // Red color for the heart
+    for (int i = 0; i <= numVertices; ++i) {
+        // Calculate angle for each vertex
+        float angle = 2 * M_PI * i / 5;
+        float x, y;
 
-    // Upper left triangle
-    glBegin(GL_TRIANGLES);
+        if (i % 2 == 0) {
+            // Outer vertex
+            x = centerX + size * cos(angle);
+            y = centerY + size * sin(angle);
+        } else {
+            // Inner vertex
+            x = centerX + size / 2 * cos(angle);
+            y = centerY + size / 2 * sin(angle);
+        }
+
         glVertex2f(x, y);
-        glVertex2f(x - size, y + size);
-        glVertex2f(x, y + 2 * size);
-    glEnd();
-
-    // Upper right triangle
-    glBegin(GL_TRIANGLES);
-        glVertex2f(x, y);
-        glVertex2f(x + size, y + size);
-        glVertex2f(x, y + 2 * size);
-    glEnd();
-
-    // Lower rectangle (square)
-    glBegin(GL_QUADS);
-        glVertex2f(x - size, y);
-        glVertex2f(x + size, y);
-        glVertex2f(x + size, y - size);
-        glVertex2f(x - size, y - size);
+    }
     glEnd();
 }
+
 
 void initializeDiamonds(int level){
     diamonds.clear();
@@ -586,11 +592,13 @@ void display() {
         }
     }
 
-    float heartSize = 0.5f; // Adjust the size as needed
-    float startX = MAZE_WIDTH - 3 * heartSize - 1; // Starting X position
-    float startY = MAZE_HEIGHT - heartSize - 1; // Starting Y position
+    float starSize = 0.5f; // Adjust the size as needed
+    float startX = MAZE_WIDTH - 3 * starSize - 1; // Starting X position
+    float startY = MAZE_HEIGHT - starSize - 1; // Starting Y position
+    float spaceBetweenStars = 0.6f; // Space between stars
+
     for (int i = 0; i < lives; i++) {
-        drawHeart(startX + i * heartSize, startY, heartSize);
+        drawStar(startX + i * (starSize + spaceBetweenStars) - 1.5, startY + 1, starSize);
     }
 
     // Put Score at Top
