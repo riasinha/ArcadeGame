@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <chrono>
 
 using namespace std;
 
@@ -16,15 +15,11 @@ std::vector<std::vector<int> > maze;
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 800;
 
-bool timerRunning = false;
-std::chrono::steady_clock::time_point startTime;
-std::chrono::steady_clock::time_point endTime;
-
 // Character configuration
 float characterSize = 0.5f; // The size of the character
 float characterX = 1.5f; // The initial X position of the character
 float characterY = 1.5f; // The initial Y position of the character
-float movementSpeed = 0.15f; // Adjust the movement speed as needed
+float movementSpeed = 0.8f; // Adjust the movement speed as needed
 
 struct Ghost {
     float x, y; // Position
@@ -37,11 +32,17 @@ struct Ghost {
         : x(x), y(y), radius(radius), r(r), g(g), b(b), dx(0), dy(0) {}
 } ghosts[] = {
     Ghost(3.5f, 3.5f, 0.2f, 1.0f, 0.0f, 0.0f), // Red ghost
-    Ghost(5.5f, 5.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
+    Ghost(2.5f, 5.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
     Ghost(7.5f, 7.5f, 0.2f, 0.0f, 1.0f, 1.0f)  // Turquoise ghost
 };
 
+struct Diamond{
+    float x, y;
+    bool collected;
+};
 
+vector<Diamond> diamonds;
+int score = 0;
 int lives = 3;
 bool isWon;
 bool isDead = false;
@@ -79,15 +80,70 @@ void drawHeart(float x, float y, float size) {
     glEnd();
 }
 
+void initializeDiamonds(int level){
+    diamonds.clear();
 
+    Diamond d1;
+    d1.collected = false;
+
+    Diamond d2;
+    d2.collected = false;
+
+    if(level == 1){
+        d1.x = 18.0f;
+        d1.y = 6.0f;
+        d2.x = 4.0f;
+        d2.y = 13.0f;
+    }
+    else if(level == 2){
+        d1.x = 18.0f;
+        d1.y = 4.0f;
+        d2.x = 2.0f;
+        d2.y = 18.0f;
+    }
+    else if(level == 3){
+        d1.x = 16.0f;
+        d1.y = 4.0f;
+        d2.x = 18.0f;
+        d2.y = 14.0f;
+    }
+    else if(level == 4){
+        d1.x = 17.5f;
+        d1.y = 6.0f;
+        d2.x = 7.5f;
+        d2.y = 9.0f;
+    }
+    else{
+        d1.x = 16.5f;
+        d1.y = 9.0f;
+        d2.x = 14.0f;
+        d2.y = 18.5f;
+    }
+
+    
+    diamonds.push_back(d1);
+    diamonds.push_back(d2);
+}
+
+void drawDiamond(float x, float y) {
+    glColor3f(1.0f, 0.8f, 0.0f); // Set diamond color
+    glBegin(GL_POLYGON); // Start drawing a polygon
+    glVertex2f(x, y + 0.2f); // Top
+    glVertex2f(x - 0.2f, y); // Left
+    glVertex2f(x, y - 0.2f); // Bottom
+    glVertex2f(x + 0.2f, y); // Right
+    glEnd(); // End of polygon
+}
 
 
 void initializeMazeForLevel(int level) {
     maze.clear(); // Clear existing maze
-    const int mazeWidth = 20; // Example, adjust based on level
-    const int mazeHeight = 20; // Example, adjust based on level
+    const int mazeWidth = 20; // 20x20 matrix
+    const int mazeHeight = 20; 
     maze.resize(mazeHeight);
+    initializeDiamonds(level);
     if (level == 1) {
+        // matrix values for Maze 1
         int rawMaze [20][20] = {
             {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
             {2, 3, 3, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
@@ -118,7 +174,7 @@ void initializeMazeForLevel(int level) {
         }
 
     } else if (level == 2) {
-
+        // matrix values for Maze 2
         int rawMaze[20][20] = {
             {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
             {2, 3, 3, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
@@ -148,7 +204,7 @@ void initializeMazeForLevel(int level) {
             }
         }
     } else if (level == 3) {
-
+        // matrix values for Maze 3
         int rawMaze[20][20] = {
             {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
             {2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2},
@@ -162,7 +218,7 @@ void initializeMazeForLevel(int level) {
             {2, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 2},
             {2, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2},
             {2, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2},
-            {2, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2},
+            {2, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 2},
             {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
             {2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
             {2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
@@ -178,7 +234,7 @@ void initializeMazeForLevel(int level) {
             }
         }
     } else if (level == 4) {
-
+        // matrix values for Maze 4
         int rawMaze[20][20] = {
             {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
             {2, 3, 3, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 2},
@@ -208,7 +264,7 @@ void initializeMazeForLevel(int level) {
             }
         }
     } else if (level == 5) {
-
+        // matrix values for Maze 5
         int rawMaze[20][20] = {
             {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
             {2, 3, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 2},
@@ -240,31 +296,12 @@ void initializeMazeForLevel(int level) {
     }
 
 }
-void displayFinalTime() {
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(endTime - startTime).count();
-    
-    // Display the time
-    std::cout << "Time taken: " << duration << " seconds" << std::endl;
-
-    // You can also display this in the GLUT window as you did for other messages
-}
 void startNextLevel() {
-    if (currentLevel == 1 && !timerRunning) {
-        startTime = std::chrono::steady_clock::now();
-        timerRunning = true;
-    }
-
-    if (currentLevel >= MAX_LEVELS) {
-        endTime = std::chrono::steady_clock::now();
-        timerRunning = false;
-        // Call a function to calculate and display the time
-    }
     if (currentLevel < MAX_LEVELS) {
         currentLevel++;
         initializeMazeForLevel(currentLevel);
         levelComplete = false;
         isDead = false;
-                displayFinalTime();
 
 
     } else {
@@ -384,6 +421,8 @@ void keyboard(unsigned char key, int x, int y) {
             }
         }
     }
+
+    glutPostRedisplay();
 }
 
 void drawCharacter() {
@@ -483,14 +522,17 @@ void updateGhostPositions(double deltaTime) {
     }
 }
 
-void update(int value) {
-    // Update logic here
-    double deltaTime = value / 1000.0;
-    updateGhostPositions(deltaTime);
-
-    glutPostRedisplay(); // Redraw the window
-    glutTimerFunc(16, update, 16); // Schedule next update in 16ms
+void updateGameLogic(){
+    // Check for diamond collection
+    for (auto& diamond : diamonds) {
+        if (!diamond.collected && fabs(characterX - diamond.x) < 0.5f && fabs(characterY - diamond.y) < 0.5f) {
+            diamond.collected = true;
+            score += 1000; // Increase score
+        }
+    }
 }
+
+
 
 bool checkCollisionWithGhosts() {
     for (const Ghost& ghost : ghosts) {
@@ -503,26 +545,64 @@ bool checkCollisionWithGhosts() {
     return false;
 }
 
+void displayScore(){
+    glColor3f(1.0, 0.0, 0.0); // Red color
+    glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
+    glColor3f(1.0, 0.0, 0.0); // Red color for the text
+    glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
+
+    string message = "";
+    message = "Score: ";
+    cout << score << endl;
+    for (char c : message) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+
+}
+
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
 
     if (!isDead) {
         isDead = checkCollisionWithGhosts();
-        if (isDead){lives--;}
+        if (isDead) {
+            lives--;
+            if(score >= 500) score -= 500;
+        }
     }
-
+    
     drawMaze();
     drawCharacter();
+    updateGameLogic();
+
     for (Ghost &ghost : ghosts) {
         drawGhost(ghost);
     }
 
+
+    for (const auto& diamond : diamonds) {
+        if (!diamond.collected) {
+            drawDiamond(diamond.x, diamond.y);
+        }
+    }
 
     float heartSize = 0.5f; // Adjust the size as needed
     float startX = MAZE_WIDTH - 3 * heartSize - 1; // Starting X position
     float startY = MAZE_HEIGHT - heartSize - 1; // Starting Y position
     for (int i = 0; i < lives; i++) {
         drawHeart(startX + i * heartSize, startY, heartSize);
+    }
+
+    // Put Score at Top
+    glColor3f(1.0, 0.0, 0.0); // Red color
+    glRasterPos2f(19.5f, 19.5f); // Example position, adjust as needed
+    glColor3f(1.0, 0.0, 0.0); // Red color for the text
+    glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT-27); // Set position
+
+    string message = "SCORE: " + to_string(score);
+    
+    for (char c : message) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
     }
 
     if (isDead) {
@@ -533,9 +613,10 @@ void display() {
         glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
 
         string message = "";
-        cout << "lives: " << lives << endl;
         if (lives == 0) {
             message = "You lost! Game over. Press G to play again.";
+            displayScore();
+
         }
         else {
             message = "Oh no! You lost a life!";
@@ -543,6 +624,8 @@ void display() {
         for (char c : message) {
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
+
+
     }
 
     if (levelComplete) {
@@ -555,6 +638,8 @@ void display() {
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
     }
+
+
 
     glutSwapBuffers();
 }
@@ -574,7 +659,6 @@ int main(int argc, char** argv) {
 
     glutDisplayFunc(display);
     glutKeyboardFunc(keyboard);
-    glutTimerFunc(0, update, 0);
 
     glutMainLoop();
     return 0;
