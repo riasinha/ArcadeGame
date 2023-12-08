@@ -1,6 +1,5 @@
-# ArcadeGame
-
-Welcome to the ArcadeGame repository! This project is a maze-based game where players navigate through a maze, avoiding ghosts along the way. The player's objective is to move from the starting point to the end point without being caught by the ghosts. The game is built using OpenGL, GLFW for window management, and GLAD for loading OpenGL functions.
+## MazeGame
+Welcome to the MazeGame repository! This project is a challenging game where players navigate through a series of mazes, avoiding ghosts and collecting diamonds. The objective is to complete all levels while maximizing your score. The game is developed using OpenGL and GLUT for graphics rendering.
 
 ## Group Members
 Sanjana Jilla
@@ -8,51 +7,48 @@ Ria Sinha
 Bhavya Ranjan
 
 ## Prerequisites
+Before starting, ensure you have the following:
 
-Before you begin, ensure you have the following requirements:
-
-* The [GLFW](https://www.glfw.org/download.html) library installed.
-* The [GLAD](https://glad.dav1d.de/) OpenGL loader generated and installed.
+* GLUT library installed.
 
 ## Project Structure
-
-The project is organized as follows:
-
-* `main.cpp` - The main game file with GLFW window creation and the game loop.
-* `dependencies/` - This folder should contain the GLAD and GLFW header files and libraries.
-* `README.md` - Describes how the project is organized and provides instructions for building and running the game.
-
-## Installing Dependencies
-
-To set up the development environment, you need to download and install GLFW and GLAD:
-
-1. **GLFW**: Go to the [GLFW download page](https://www.glfw.org/download.html), download the pre-compiled binaries or source code for your platform, and set up according to their instructions.
-
-2. **GLAD**: Visit [GLAD's web service](https://glad.dav1d.de/), configure the OpenGL loader for your needs (OpenGL version and extensions), and download the generated files. Place the `glad.c` file in your project's source directory and the header files in your include path.
+* main.cpp - Main game file containing game logic, rendering, and input handling.
+* dependencies/ - Contains the GLUT header files and libraries.
+* README.md - Provides a project overview and setup instructions.
+* highscores.txt - Stores the high scores of the game.
+* Installing Dependencies
+* GLUT: Download from the GLUT downloads page. Follow the installation instructions provided there.
 
 ## Building the Project
-
-To build the project, follow these steps:
-
-1. Clone the repository to your local machine:
-2. Navigate to the project directory:
-3. Build the project. If you're using a specific build system or IDE, the command might differ:
-'command shift b' - This command should be configured to compile the code and link the GLFW and GLAD libraries.
+* Clone the repository.
+* Navigate to the project directory.
+* Compile the project using a suitable C++ compiler, linking the GLUT library. Example command for g++: g++ -o MazeGame main.cpp -lGL -lGLU -lglut.
 
 ## Running the Game
+Execute the compiled program to start the game. Control the character using 'W', 'A', 'S', 'D' keys, avoid ghosts, and collect diamonds for points.
+To run it on csil: 
+g++ main.cpp -I/opt/homebrew/include -L/opt/homebrew/lib -lGL -lglut
+DISPLAY=:0 ./a.out
 
-After building the project, you can start the game by running the generated executable:
 
-Control your character using the arrow keys, and navigate through the maze. The objective is to avoid the ghosts, represented by circles, and reach the end of the maze.
+## Game Features
+* Multiple levels with increasing difficulty.
+* Ghost enemies with AI movements.
+* Diamond collection for score boosting.
+* High score tracking and leaderboard display.
+* Lives system and game-over logic.
+* Start, pause, and game-over screens with instructions.
+* Code Explanation
 
-## Understanding the Code
+## Key components of the code include:
 
-The main aspects of the code are:
+* maze - 2D vector representing the maze layout with walls, paths, and start/end points.
+* Ghost struct - Represents ghosts with position, direction, and speed.
+* Diamond struct - Represents diamonds with position and collection status.
+* GameState enum - Manages different states of the game (start, in-game, pause, etc.).
+* drawMaze, drawCharacter, drawGhost, drawDiamond - Functions to render game elements.
+* keyboard - Handles keyboard input for character movement and game controls.
+* updateGameLogic - Manages game logic like collision detection and level progression.
+* display - GLUT display function to render the game based on the current state.
 
-* `maze` - A 2D vector representing the maze layout, where `1` is a wall, `2` is a boundary, `3` is the starting point, and `4` is the end point.
-* `characterX`, `characterY` - Variables representing the player's position in the maze.
-* `Ghost` - A struct representing the ghosts in the maze, each with a position, direction, color, and speed.
-* `isPositionValid` - A function that checks whether a proposed movement is within the bounds of the maze and not within a wall.
-* `drawMaze`, `drawCharacter`, `drawGhost` - Functions that render the maze, player, and ghosts respectively.
-* `processInput` - Handles user input to move the player around the maze.
-* `updateGhostPositions` - Updates the positions of the ghosts, giving them a new random direction periodically.
+
