@@ -67,7 +67,7 @@ bool isWon; // Flag to check if the player has won
 bool isDead = false; // Flag to check if the player is dead
 bool levelComplete = false; // Flag to check if the level is complete
 
-int currentLevel = 5; // Current level of the game
+int currentLevel = 1; // Current level of the game
 const int MAX_LEVELS = 5; // Total number of levels in the game
 string leaderboardMessage = ""; // Message to display on the leaderboard
 const string HIGH_SCORE_FILE = "highscores.txt"; // File to store high scores
