@@ -67,7 +67,7 @@ bool isWon; // Flag to check if the player has won
 bool isDead = false; // Flag to check if the player is dead
 bool levelComplete = false; // Flag to check if the level is complete
 
-int currentLevel = 1; // Current level of the game
+int currentLevel = 5; // Current level of the game
 const int MAX_LEVELS = 5; // Total number of levels in the game
 string leaderboardMessage = ""; // Message to display on the leaderboard
 const string HIGH_SCORE_FILE = "highscores.txt"; // File to store high scores
@@ -104,10 +104,15 @@ void displayLeaderboard() {
     int posX = 1; // Position at the left
     int posY = 18; // Start from the top and leave some margin
 
-    string title = "Leaderboard - press L to return to the start screen";
+    string title = "Leaderboard";
 
     glRasterPos2i(posX, posY);
     for (char c : title) {
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
+    }
+
+    glRasterPos2f(3.5, 11);
+    for (char c : leaderboardMessage) {
         glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
     }
 
@@ -505,6 +510,7 @@ void keyboard(unsigned char key, int x, int y) {
     } if (currentGameState == LEADERBOARD_SCREEN && key == 'l' || key == 'L') {
         currentGameState = GameState::START_SCREEN;
         isDead = false;
+        lives = 3;
         levelComplete = false;
         characterX = 1.5f; // Reset to start position
         characterY = 1.5f;
@@ -789,6 +795,7 @@ void display() {
                 string message = "Oh no! You lost a life! Press R to restart";
                 if (currentLevel > MAX_LEVELS || lives <= 0) {
                     updateLeaderboard(score);
+                    leaderboardMessage = "You lost! Game over. Press L to play again.";
                     message = "You lost! Game over. Press L to play again.";
                     currentGameState = GameState::LEADERBOARD_SCREEN;
                 }
@@ -810,6 +817,7 @@ void display() {
                 // Display "Congrats you won" message at the center of the screen
                 glColor3f(0.0, 1.0, 0.0); // Green color for the text
                 glRasterPos2i(5.5, 11);
+                leaderboardMessage = "Congrats you won! Press L to restart the game.";
                 string message = "Congrats you won! Press G to restart the game.";
                 for (char c : message) {
                     glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
