@@ -1,5 +1,4 @@
 #include <GLUT/glut.h>
-//#include < GLUT/freeglut.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -23,6 +22,7 @@ float characterX = 1.5f; // The initial X position of the character
 float characterY = 1.5f; // The initial Y position of the character
 float movementSpeed = 0.8f; // Adjust the movement speed as needed
 
+// Enumeration to define different game states
 enum GameState {
     START_SCREEN,
     IN_GAME,
@@ -30,10 +30,9 @@ enum GameState {
     GAME_OVER,
     LEADERBOARD_SCREEN
 };
-
-
 GameState currentGameState = GameState::START_SCREEN;
 
+// Structure to define ghost properties
 struct Ghost {
     float x, y; // Position
     float dx, dy; // Direction
@@ -43,6 +42,7 @@ struct Ghost {
     // Initialize dx, dy with random direction
     Ghost(float x, float y, float radius, float r, float g, float b) 
         : x(x), y(y), radius(radius), r(r), g(g), b(b), dx(0), dy(0) {}
+// Initializing an array of ghosts with different positions and colors
 } ghosts[] = {
     Ghost(5.5f, 1.5f, 0.2f, 1.0f, 0.0f, 0.0f), // Red ghost
     Ghost(12.5f, 15.5f, 0.2f, 1.0f, 0.0f, 1.0f), // Purple ghost
@@ -56,25 +56,26 @@ struct Ghost {
 };
 
 struct Diamond{
-    float x, y;
-    bool collected;
+    float x, y; // Position of the diamond
+    bool collected; // Flag to check if the diamond is collected
 };
 
-vector<Diamond> diamonds;
-int score = 0;
-int lives = 3;
-bool isWon;
-bool isDead = false;
-bool levelComplete = false;
+vector<Diamond> diamonds; // Vector to store diamonds
+int score = 0; // Player's score
+int lives = 3; // Number of lives the player has
+bool isWon; // Flag to check if the player has won
+bool isDead = false; // Flag to check if the player is dead
+bool levelComplete = false; // Flag to check if the level is complete
 
-int currentLevel = 1;
-const int MAX_LEVELS = 5; // Define how many levels you have
-string leaderboardMessage = "";
-const string HIGH_SCORE_FILE = "highscores.txt";
-vector<int> highScores;  // Global variable for storing high scores
+int currentLevel = 1; // Current level of the game
+const int MAX_LEVELS = 5; // Total number of levels in the game
+string leaderboardMessage = ""; // Message to display on the leaderboard
+const string HIGH_SCORE_FILE = "highscores.txt"; // File to store high scores
+vector<int> highScores;  // Vector to store high scores
 
-
+// Function to read high scores from a file
 void readHighScores() {
+    // Read scores and store them in highScores vector
     ifstream file(HIGH_SCORE_FILE);
     int score;
     highScores.clear();
@@ -95,6 +96,7 @@ void readHighScores() {
     }
 }
 
+// Function to display the leaderboard on screen
 void displayLeaderboard() {
     glClear(GL_COLOR_BUFFER_BIT); // Clear the screen
     glColor3f(1.0, 1.0, 1.0); // Set text color
@@ -130,7 +132,7 @@ void displayLeaderboard() {
     glutSwapBuffers(); // Swap the buffers to display the screen
 }
 
-
+// Function to write high scores to a file
 void writeHighScores() {
     ofstream file(HIGH_SCORE_FILE);
 
@@ -141,6 +143,7 @@ void writeHighScores() {
     file.close();
 }
 
+// Function to update the leaderboard with a new score
 void updateLeaderboard(int newScore) {
     vector<int>::iterator it;
 
@@ -165,6 +168,7 @@ void updateLeaderboard(int newScore) {
     }
 }
 
+// Function to draw the start screen
 void drawStartScreen() {
     glClear(GL_COLOR_BUFFER_BIT); // Clear the screen
 
@@ -195,6 +199,7 @@ void drawStartScreen() {
     glutSwapBuffers(); // Swap the buffers to display the screen
 }
 
+// Function to draw a star (used for lives display)
 void drawStar(float centerX, float centerY, float size) {
     glColor3f(1.0f, 1.0f, 0.0f); // Yellow color for the star
     const int numVertices = 10; // Total vertices for a 5-point star
@@ -221,6 +226,7 @@ void drawStar(float centerX, float centerY, float size) {
     glEnd();
 }
 
+// Function to initialize diamonds for each level
 void initializeDiamonds(int level){
     diamonds.clear();
 
@@ -266,6 +272,7 @@ void initializeDiamonds(int level){
     diamonds.push_back(d2);
 }
 
+// Function to draw a diamond
 void drawDiamond(float x, float y) {
     glColor3f(1.0f, 0.8f, 0.0f); // Set diamond color
     glBegin(GL_POLYGON); // Start drawing a polygon
@@ -276,6 +283,7 @@ void drawDiamond(float x, float y) {
     glEnd(); // End of polygon
 }
 
+// Function to initialize the maze for each level
 void initializeMazeForLevel(int level) {
     maze.clear(); // Clear existing maze
     const int mazeWidth = 20; // 20x20 matrix
@@ -437,6 +445,7 @@ void initializeMazeForLevel(int level) {
 
 }
 
+// Function to start the next level
 void startNextLevel() {
     if (currentLevel < MAX_LEVELS) {
         currentLevel++;
@@ -448,6 +457,7 @@ void startNextLevel() {
     } else {
         updateLeaderboard(score);
 
+        //Add text to screen
         glColor3f(0.0, 1.0, 0.0); // Red color
         glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
         glColor3f(1.0, 0.0, 0.0); // Red color for the text
@@ -587,6 +597,7 @@ void keyboard(unsigned char key, int x, int y) {
     glutPostRedisplay();
 }
 
+//draws the player character
 void drawCharacter() {
     glColor3f(0.53f, 0.81f, 0.98f); // Character color
 
@@ -598,6 +609,7 @@ void drawCharacter() {
     glEnd();
 }
 
+//draws each ghost 
 void drawGhost(Ghost ghost) {
 
     // Calculate direction vector towards the player
@@ -627,6 +639,7 @@ void drawGhost(Ghost ghost) {
     glEnd();
 }
 
+//renders the maze for each level 
 void drawMaze() {
     for (int y = 0; y < MAZE_HEIGHT; ++y) {
         for (int x = 0; x < MAZE_WIDTH; ++x) {
@@ -652,6 +665,7 @@ void drawMaze() {
     }
 }
 
+//logic for ghost movement + death
 void updateGhostPositions(double deltaTime) {
     if (isDead) {
         return; // Don't update ghost positions if the player is dead
@@ -684,6 +698,7 @@ void updateGhostPositions(double deltaTime) {
     }
 }
 
+//diamond collection logic
 void updateGameLogic(){
     // Check for diamond collection
     for (auto& diamond : diamonds) {
@@ -694,6 +709,7 @@ void updateGameLogic(){
     }
 }
 
+//checks for death
 bool checkCollisionWithGhosts() {
     for (const Ghost& ghost : ghosts) {
         float distance = sqrt((characterX - ghost.x) * (characterX - ghost.x) +
@@ -705,6 +721,7 @@ bool checkCollisionWithGhosts() {
     return false;
 }
 
+//displays the score at the top of the screen
 void displayScore(){
     glColor3f(1.0, 0.0, 0.0); // Red color
     glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
@@ -719,6 +736,7 @@ void displayScore(){
 
 }
 
+//manages all the display windows and functions 
 void display() {
     switch (currentGameState) {
         case START_SCREEN:
@@ -843,22 +861,42 @@ void display() {
 
 
 int main(int argc, char** argv) {
+    // Initialize the GLUT library
     glutInit(&argc, argv);
+
+    // Set the display mode with double buffering and RGB coloring
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+
+    // Set the initial window size
     glutInitWindowSize(SCR_WIDTH, SCR_HEIGHT);
+
+    // Create a window with the specified title
     glutCreateWindow("Maze Game");
 
+    // Set the projection matrix mode
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+    glLoadIdentity(); // Reset the projection matrix
+
+    // Set the coordinate system for the projection matrix
     glOrtho(0.0, MAZE_WIDTH, 0.0, MAZE_HEIGHT, -1.0, 1.0);
+
+    // Switch to model view matrix mode
     glMatrixMode(GL_MODELVIEW);
 
+    // Initialize the maze for the current level
     initializeMazeForLevel(currentLevel);
-    readHighScores(); // Read the high scores at the start
 
+    // Read high scores from file
+    readHighScores();
+
+    // Register the display callback function
     glutDisplayFunc(display);
+
+    // Register the keyboard callback function
     glutKeyboardFunc(keyboard);
 
+    // Start the main loop of GLUT
     glutMainLoop();
-    return 0;
+
+    return 0; // Return statement, ending the program
 }
