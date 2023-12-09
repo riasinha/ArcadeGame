@@ -1,4 +1,4 @@
-#include <GLUT/glut.h>
+#include <GL/glut.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -104,7 +104,7 @@ void displayLeaderboard() {
     int posX = SCR_WIDTH / 4;
     int posY = SCR_HEIGHT - 100; // Start from the top
 
-    string title = "Leaderboard - press L to return to the start screen";
+    string title = "Leaderboard";
     
     glWindowPos2i(posX, posY);
     for (char c : title) {
