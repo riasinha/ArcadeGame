@@ -16,7 +16,8 @@ Before starting, ensure you have the following:
 * dependencies/ - Contains the GLUT header files and libraries.
 * README.md - Provides a project overview and setup instructions.
 * highscores.txt - Stores the high scores of the game.
-* Installing Dependencies
+
+## Installing Dependencies
 * GLUT: Download from the GLUT downloads page. Follow the installation instructions provided there.
 
 ## Building the Project
