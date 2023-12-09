@@ -1,4 +1,4 @@
-#include <GL/glut.h>
+#include <GLUT/glut.h>
 #include <iostream>
 #include <vector>
 #include <cmath>
@@ -101,29 +101,27 @@ void displayLeaderboard() {
     glClear(GL_COLOR_BUFFER_BIT); // Clear the screen
     glColor3f(1.0, 1.0, 1.0); // Set text color
 
-    int posX = SCR_WIDTH / 4;
-    int posY = SCR_HEIGHT - 100; // Start from the top
+    int posX = 1; // Position at the left
+    int posY = 18; // Start from the top and leave some margin
 
     string title = "Leaderboard";
-    
-    glWindowPos2i(posX, posY);
+
+    glRasterPos2i(posX, posY);
     for (char c : title) {
         glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
     }
 
-    posY -= 50; // Space before scores
-
-    glWindowPos2i(posX, posY);
+    glRasterPos2f(3.5, 11);
     for (char c : leaderboardMessage) {
         glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
     }
 
-    posY -= 50; // Space before scores
+    posY -= 1; // Space before scores
 
     for (int i = 0; i < highScores.size() && i < 5; i++) {
-        posY -= 30; // Space between scores
+        posY -= 1; // Space between scores
         string scoreText = "Score " + to_string(i + 1) + ": " + to_string(highScores[i]);
-        glWindowPos2i(posX, posY);
+        glRasterPos2i(posX, posY);
         for (char c : scoreText) {
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
         }
@@ -168,13 +166,12 @@ void updateLeaderboard(int newScore) {
     }
 }
 
-// Function to draw the start screen
 void drawStartScreen() {
     glClear(GL_COLOR_BUFFER_BIT); // Clear the screen
 
-    int posX = SCR_WIDTH / 6;
-    int posY = SCR_HEIGHT / 1.3;
-    int charWidth = 17; // Approximate width of each character
+    float posX = ((SCR_WIDTH / 6) / (float)SCR_WIDTH * 2 - 1) + 3;
+    float posY = ((SCR_HEIGHT / 1.3) / (float)SCR_HEIGHT * 2 - 1) + 2;
+    float charWidth = 17.0f / SCR_WIDTH * 2;
 
     // Render the instruction text
     string instructions = "Welcome to the Maze Game!\n"
@@ -183,21 +180,33 @@ void drawStartScreen() {
                           "You have 3 lives to complete 5 levels.\n"
                           "Press 'S' to start the game!";
 
-    glColor3f(1.0, 1.0, 1.0); // Red color for the text
+    glColor3f(1.0, 1.0, 1.0); // White color for the text
 
     for (char c : instructions) {
         if (c == '\n') {
-            posY -= 30; // Move down for a new line
-            posX = SCR_WIDTH / 6; // Reset X position at the start of a new line
+            posY -= (30.0f / SCR_HEIGHT * 2) * 10; // Move down for a new line
+            posX = ((SCR_WIDTH / 6) / (float)SCR_WIDTH * 2 - 1) + 3; // Reset X position at the start of a new line
         } else {
-            glWindowPos2i(posX, posY);
+            glRasterPos2f(posX, posY + 10);
             glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-            posX += charWidth; // Move X position to the right for the next character
+            if(c == 'W' || c == 'M'){
+                posX += charWidth + 0.5;
+            }
+            else if(c == 'G' || c == 'U' || c == 'A' || c == 'P' || c == 'm'){
+                posX += charWidth + 0.45;
+            }
+            else if(c == 'l' || c == 'i'){
+                posX += charWidth + 0.25;
+            }
+            else{
+                posX += charWidth + 0.35; // Move X position to the right for the next character
+            }
         }
     }
 
     glutSwapBuffers(); // Swap the buffers to display the screen
 }
+
 
 // Function to draw a star (used for lives display)
 void drawStar(float centerX, float centerY, float size) {
@@ -445,23 +454,20 @@ void initializeMazeForLevel(int level) {
 
 }
 
-// Function to start the next level
 void startNextLevel() {
     if (currentLevel < MAX_LEVELS) {
         currentLevel++;
         initializeMazeForLevel(currentLevel);
         levelComplete = false;
         isDead = false;
-
-
     } else {
         updateLeaderboard(score);
 
-        //Add text to screen
-        glColor3f(0.0, 1.0, 0.0); // Red color
-        glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
+        // Set color and position for the text
         glColor3f(1.0, 0.0, 0.0); // Red color for the text
-        glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
+        float posX = 3;
+        float posY = 11;
+        glRasterPos2f(posX, posY);
 
         string message = "Congrats you won! Press G to restart the game.";
         for (char c : message) {
@@ -470,6 +476,7 @@ void startNextLevel() {
         currentGameState = GameState::LEADERBOARD_SCREEN;
     }
 }
+
 
 bool isPositionValid(float x, float y) {
     // Check for window boundaries
@@ -503,6 +510,7 @@ void keyboard(unsigned char key, int x, int y) {
     } if (currentGameState == LEADERBOARD_SCREEN && key == 'l' || key == 'L') {
         currentGameState = GameState::START_SCREEN;
         isDead = false;
+        lives = 3;
         levelComplete = false;
         characterX = 1.5f; // Reset to start position
         characterY = 1.5f;
@@ -721,22 +729,18 @@ bool checkCollisionWithGhosts() {
     return false;
 }
 
-//displays the score at the top of the screen
-void displayScore(){
-    glColor3f(1.0, 0.0, 0.0); // Red color
-    glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
+void displayScore() {
     glColor3f(1.0, 0.0, 0.0); // Red color for the text
-    glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
 
-    string message = "";
-    message = "Score: ";
-    for (char c : message) {
+    // Set the position for the text at the top middle of the screen
+    glRasterPos2i(9, 19);
+
+    string scoreMessage = "Score: " + to_string(score);
+    for (char c : scoreMessage) {
         glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
     }
-
 }
 
-//manages all the display windows and functions 
 void display() {
     switch (currentGameState) {
         case START_SCREEN:
@@ -749,116 +753,82 @@ void display() {
 
         case IN_GAME:
             glClear(GL_COLOR_BUFFER_BIT);
-
-                if (!isDead) {
-                    isDead = checkCollisionWithGhosts();
-                    if (isDead) {
-                        lives--;
-                        if(score >= 500) score -= 500;
-                    }
+            if (!isDead) {
+                isDead = checkCollisionWithGhosts();
+                if (isDead) {
+                    lives--;
+                    if (score >= 500) score -= 500;
                 }
-                
-                drawMaze();
-                drawCharacter();
-                updateGameLogic();
+            }
+            
+            drawMaze();
+            drawCharacter();
+            updateGameLogic();
 
-                for (Ghost &ghost : ghosts) {
-                    drawGhost(ghost);
+            for (Ghost &ghost : ghosts) {
+                drawGhost(ghost);
+            }
+
+            for (const auto& diamond : diamonds) {
+                if (!diamond.collected) {
+                    drawDiamond(diamond.x, diamond.y);
                 }
+            }
 
+            // Draw lives as stars
+            float starSize = 0.5f; // Adjust the size as needed
+            float startX = MAZE_WIDTH - 3 * starSize - 1; // Starting X position
+            float startY = MAZE_HEIGHT - starSize - 1; // Starting Y position
+            float spaceBetweenStars = 0.6f; // Space between stars
 
-                for (const auto& diamond : diamonds) {
-                    if (!diamond.collected) {
-                        drawDiamond(diamond.x, diamond.y);
-                    }
-                }
+            for (int i = 0; i < lives; i++) {
+                drawStar((startX + i * (starSize + spaceBetweenStars))-1, (startY + 1), starSize);
+            }
 
-                float starSize = 0.5f; // Adjust the size as needed
-                float startX = MAZE_WIDTH - 3 * starSize - 1; // Starting X position
-                float startY = MAZE_HEIGHT - starSize - 1; // Starting Y position
-                float spaceBetweenStars = 0.6f; // Space between stars
+            // Put Score at Top
+            displayScore();
 
-                for (int i = 0; i < lives; i++) {
-                    drawStar(startX + i * (starSize + spaceBetweenStars) - 1.5, startY + 1, starSize);
-                }
-
-                // Put Score at Top
-                glColor3f(1.0, 0.0, 0.0); // Red color
-                glRasterPos2f(19.5f, 19.5f); // Example position, adjust as needed
+            if (isDead) {
+                // Display "You Died" message at the center of the screen
                 glColor3f(1.0, 0.0, 0.0); // Red color for the text
-                glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT-27); // Set position
-
-                string message = "SCORE: " + to_string(score);
-                
+                glRasterPos2i(5, 11);
+                string message = "Oh no! You lost a life! Press R to restart";
+                if (currentLevel > MAX_LEVELS || lives <= 0) {
+                    updateLeaderboard(score);
+                    leaderboardMessage = "You lost! Game over. Press L to play again.";
+                    message = "You lost! Game over. Press L to play again.";
+                    currentGameState = GameState::LEADERBOARD_SCREEN;
+                }
                 for (char c : message) {
                     glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
                 }
+            }
 
-                if (isDead) {
-                    // Display "You Died" message
-                    glColor3f(1.0, 0.0, 0.0); // Red color
-                    glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
-                    glColor3f(1.0, 0.0, 0.0); // Red color for the text
-                    glWindowPos2i(SCR_WIDTH / 3 - 50, SCR_HEIGHT / 2); // Set position
-
-                    string message = "";
-                    if (currentLevel > MAX_LEVELS) {
-                        updateLeaderboard(score);
-                        leaderboardMessage = "Congrats you won! Press L to restart the game.";
-                        message = "You lost! Game over. Press L to play again.";
-                        currentGameState = GameState::LEADERBOARD_SCREEN;
-                        displayScore();                    
-                    }
-
-                    if (lives == 0) {
-                        updateLeaderboard(score);
-                        leaderboardMessage = "You lost! Game over. Press L to play again.";
-                        message = "You lost! Game over. Press L to play again.";
-                        currentGameState = GameState::LEADERBOARD_SCREEN;
-                        displayScore();
-                    }
-                    else {
-                        message = "Oh no! You lost a life! Press R to restart";
-                    }
-                    for (char c : message) {
-                        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-                    }
-
-
+            if (levelComplete && currentLevel < MAX_LEVELS) {
+                // Display "Level complete" message at the center of the screen
+                glColor3f(0.0, 1.0, 0.0); // Green color for the text
+                glRasterPos2i(3.5, 11);
+                string message = "Level complete! Press N to go to the next level!";
+                for (char c : message) {
+                    glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
                 }
-
-                if (levelComplete and currentLevel < 5) {
-                    // Display "You Won" message
-                    glColor3f(0.0, 1.0, 0.0); // Green color
-                    glColor3f(0.0, 1.0, 0.0); // Green color for the text
-                    glWindowPos2i(SCR_WIDTH / 3 - 50, SCR_HEIGHT / 2); // Set position
-                    std::string message = "Level complete! Press N to go to the next level!";
-                    for (char c : message) {
-                        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-                    }
-                } else if (levelComplete and currentLevel >= 5){
-                    updateLeaderboard(score);
-                    glColor3f(0.0, 1.0, 0.0); // Red color
-                    glRasterPos2f(5.0f, 5.0f); // Example position, adjust as needed
-                    glColor3f(1.0, 0.0, 0.0); // Red color for the text
-                    glWindowPos2i(SCR_WIDTH / 2 - 50, SCR_HEIGHT / 2); // Set position
-                    
-                    leaderboardMessage = "Congrats you won! Press L to restart the game.";
-                    string message = "Congrats you won! Press G to restart the game.";
-                    for (char c : message) {
-                        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
-                    }
-                    currentGameState = GameState::LEADERBOARD_SCREEN;
+            } else if (levelComplete && currentLevel >= MAX_LEVELS) {
+                updateLeaderboard(score);
+                // Display "Congrats you won" message at the center of the screen
+                glColor3f(0.0, 1.0, 0.0); // Green color for the text
+                glRasterPos2i(5.5, 11);
+                leaderboardMessage = "Congrats you won! Press L to restart the game.";
+                string message = "Congrats you won! Press G to restart the game.";
+                for (char c : message) {
+                    glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, c);
                 }
+                currentGameState = GameState::LEADERBOARD_SCREEN;
+            }
 
-
-
-                glutSwapBuffers();
+            glutSwapBuffers();
             break;
     }
 }
-
-
 
 int main(int argc, char** argv) {
     // Initialize the GLUT library
