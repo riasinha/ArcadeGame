@@ -511,6 +511,8 @@ void keyboard(unsigned char key, int x, int y) {
         currentGameState = GameState::START_SCREEN;
         isDead = false;
         lives = 3;
+        currentLevel = 1;
+        score = 0;
         levelComplete = false;
         characterX = 1.5f; // Reset to start position
         characterY = 1.5f;
@@ -673,22 +675,22 @@ void drawMaze() {
     }
 }
 
-//logic for ghost movement + death
 void updateGhostPositions(double deltaTime) {
     if (isDead) {
         return; // Don't update ghost positions if the player is dead
     }
     static float changeDirectionTimer = 0;
-    static float directionChangeInterval = 2.0f; // Change direction every 2 seconds
+    static float directionChangeInterval = 1.0f; // Change direction every 1 second
 
     changeDirectionTimer += static_cast<float>(deltaTime);
 
     // Change direction periodically
     if (changeDirectionTimer >= directionChangeInterval) {
         for (Ghost& ghost : ghosts) {
-            // Randomly assign new directions
-            ghost.dx = (rand() % 3 - 1) * ghost.speed; // -1, 0, or 1
-            ghost.dy = (rand() % 3 - 1) * ghost.speed;
+            // Randomly assign new directions and increase speed
+            float speedMultiplier = 1.5f; // Increase this value to make ghosts faster
+            ghost.dx = (rand() % 3 - 1) * ghost.speed * speedMultiplier; // -1, 0, or 1, with increased speed
+            ghost.dy = (rand() % 3 - 1) * ghost.speed * speedMultiplier;
         }
         changeDirectionTimer = 0; // Reset the timer
     }
@@ -705,6 +707,7 @@ void updateGhostPositions(double deltaTime) {
         }
     }
 }
+
 
 //diamond collection logic
 void updateGameLogic(){
